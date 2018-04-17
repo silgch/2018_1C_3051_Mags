@@ -38,7 +38,6 @@ namespace TGC.Group.Model
             Description = Game.Default.Description;
         }
 
-
         //Mesh del Personaje.
         private TgcSkeletalMesh MeshPersonaje { get; set; }
 
@@ -59,18 +58,6 @@ namespace TGC.Group.Model
 
         public TGCVector3 AjusteDeCamara { get; private set; }
         private TgcCamera CamaraPersonaje { get; set; }
-      
-
-        
-     
-
-
-     
-        
-	  
-     
-
-
 
         /// <summary>
         ///     Se llama una sola vez, al principio cuando se ejecuta el ejemplo.
@@ -105,9 +92,12 @@ namespace TGC.Group.Model
 
             internal void Mover(TGCVector3 movement)
             {
+                //Muevo en cada coordenada
                 this.mesh.Move(movement);
-                posicion = posicion + movement;
+                //Actualizo la nueva posición de Tgcito
+                this.posicion = mesh.Position;
             }
+
         }
 
 
@@ -136,20 +126,11 @@ namespace TGC.Group.Model
 
             //Rotarlo 180° porque esta mirando para el otro lado
             MeshPersonaje.RotateY(Geometry.DegreeToRadian(180f));
-
-            //Quiero rotar al robot mirando hacia afuera de la pantalla
-            //MeshPersonaje.RotateY(FastMath.PI);
-
-            //Si quiero que mira para adelante
-            // MeshPersonaje.RotateY(FastMath.PI_HALF);
-
-            //Si quiero que mira para atras
-            //MeshPersonaje.RotateY((FastMath.QUARTER_PI) * 6);
             
             //Creo un loader para cargar la scena
             var loader = new TgcSceneLoader();
 
-            //Cargo la scena del juego
+            //Cargo la escena del juego
             Scene =
                loader.loadSceneFromFile(MediaDir +
                                         "Iglesia\\Iglesia-TgcScene.xml");
@@ -161,22 +142,20 @@ namespace TGC.Group.Model
             MeshScena.AutoTransform = true;
 
             MeshPersonaje.Scale = new TGCVector3(0.20f, 0.20f, 0.20f);
-            //defino la posicion del jugador para que este posicionado en medio de la escena
+            //defino la posición del jugador para que este posicionado en medio de la escena
             MeshPersonaje.Position = new TGCVector3(0.0f, 50.0f, 50.0f);
-
-            
 
             //Instancio el personaje, estructura para facilitar el manejo del personaje
 
             Tgcito = new Personaje(MeshPersonaje);
 
-
             //Configuro donde esta la posicion de la camara y hacia donde mira.
-            AjusteDeCamara = new TGCVector3(0f, 60f, 45f); // Se posiciona sobre el personaje y un poco hacia atrás
+            AjusteDeCamara = new TGCVector3(0f, 50f, -30f); // Se posiciona sobre el personaje y un poco hacia atrás
 
             CamaraPersonaje = new TgcCamera();
-            CamaraPersonaje.SetCamera(Tgcito.GetPosicion() + AjusteDeCamara, new TGCVector3(0f, 1f, 0f), TGCVector3.Up);
+            CamaraPersonaje.SetCamera(Tgcito.GetPosicion() + AjusteDeCamara, Tgcito.GetPosicion());
 
+            //Seteo la cámara del juego con la que creé para mi personaje
             Camara = CamaraPersonaje;
             //Internamente el framework construye la matriz de view con estos dos vectores.
             //Luego en nuestro juego tendremos que crear una cámara que cambie la matriz de view con variables como movimientos o animaciones de escenas.
@@ -192,103 +171,91 @@ namespace TGC.Group.Model
         {
             PreUpdate();
 
-            // defino variables de ingreso de datos
+            // Defino variables de ingreso de datos
             var input = Input;
+
+            // El movimiento comienza como nulo
             var movement = TGCVector3.Empty;
-            var posicionDeCamara = AjusteDeCamara;
+
+            // Tengo la posición actual de la cámara
+            var posicionDeCamara = Camara.Position;
+
+            // Variables para el movimiento y rotación
             var velocidadCaminar = 100f;
-            var velocidadRotacion = 100f;
+            //var velocidadRotacion = 100f; // No lo necesitamos por el momento
 
-            
-        
-
-
-            //Guardar posicion original antes de cambiarla
-            var originalPos = MeshPersonaje.Position;
-
+            // Tengo la posicion original de Tgcito 
+            var originalPos = Tgcito.GetPosicion();
 
             //Calcular proxima posicion de personaje segun Input
             var moveForward = 0f;
+            var moveSide = 0f;
             float rotate = 0;
             var moving = false;
             var rotating = false;
 
             //Movernos hacia adelante
 
-
-        
-
             if (Input.keyDown(Key.UpArrow) || Input.keyDown(Key.W))
             {
-               moveForward = -velocidadCaminar;
+               moveForward = velocidadCaminar;
                 moving = true;
             }
             else if (Input.keyDown(Key.DownArrow) || Input.keyDown(Key.S))
             {
-                moveForward = velocidadCaminar;
+                moveForward = -velocidadCaminar;
                 moving = true;
+                rotate = FastMath.PI;
+                rotating = true;
             }
 
-            else if (Input.keyDown(Key.RightArrow) || Input.keyDown(Key.D))
+            if (Input.keyDown(Key.RightArrow) || Input.keyDown(Key.D))
             {
-                rotate = -velocidadRotacion;
+                moveSide = velocidadCaminar;
+                moving = true;
+                rotate = FastMath.PI_HALF;
                 rotating = true;
             }
 
             else if (Input.keyDown(Key.LeftArrow) || Input.keyDown(Key.A))
             {
-                rotate = velocidadRotacion;
+                moveSide = -velocidadCaminar;
+                moving = true;
+                rotate = FastMath.PI_HALF * 3;
                 rotating = true;
             }
-
-
-          
 
             //Si hubo rotacion
             if (rotating)
             {
              //Rotar personaje y la camara, hay que multiplicarlo por el tiempo transcurrido para no atarse a la velocidad el hardware
-             var rotAngle = Geometry.DegreeToRadian(rotate * ElapsedTime);
-                MeshPersonaje.RotateY(rotAngle);
+             // var rotAngle = Geometry.DegreeToRadian(rotate * ElapsedTime); //Empecemos por rotaciones simples
+                MeshPersonaje.RotateY(rotate); //El problema es que rota todo el tiempo 
              }
-            
-
-            
-
+           
             //Si hubo desplazamiento
             if (moving)
             {
                 //Activar animacion de caminando
                 MeshPersonaje.playAnimation("Caminando", true);
 
+                //Calculo el desplazamiento total como un vector de 3 componentes
+                //Es el total de movimiento en cada uno de los ejes
+                var movimientoTotal = new TGCVector3(moveSide * ElapsedTime, 0, moveForward * ElapsedTime);
+
                 //Aplicar movimiento hacia adelante o atras segun la orientacion actual del Mesh
-                var lastPos = MeshPersonaje.Position;
-                posicionDeCamara = posicionDeCamara + movement;
-                Camara.SetCamera(lastPos + posicionDeCamara, Camara.LookAt);
-
-                //La velocidad de movimiento tiene que multiplicarse por el elapsedTime para hacerse independiente de la velocida de CPU
-                //Ver Unidad 2: Ciclo acoplado vs ciclo desacoplado
-                MeshPersonaje.MoveOrientedY(moveForward * ElapsedTime);
+                Tgcito.Mover(movimientoTotal);   
+                
+                //Vuelvo a setear la cámara con los valores actualizados
+                Camara.SetCamera(Camara.Position + movimientoTotal, Tgcito.GetPosicion());
+               
             }
-         
-
-
-
+       
             //Si no se esta moviendo, activar animacion de Parado
             else
             {
                 MeshPersonaje.playAnimation("Parado", true);
             }
-
-            movement = movement  * ElapsedTime;
-           
-
-
-            //Ajustar la camara
-
-
-            //Ajusto la posicion del mesh (y en consecuencia del personaje)
-            Tgcito.Mover(movement);
 
                 PostUpdate();
             
@@ -306,9 +273,6 @@ namespace TGC.Group.Model
             //Inicio el render de la escena, para ejemplos simples. Cuando tenemos postprocesado o shaders es mejor realizar las operaciones según nuestra conveniencia.
             PreRender();
 
-            //Dibuja un texto por pantalla
-            DrawText.drawText("Con la tecla F se dibuja el bounding box.", 0, 20, Color.OrangeRed);
-
             //Siempre antes de renderizar el modelo necesitamos actualizar la matriz de transformacion.
             //Debemos recordar el orden en cual debemos multiplicar las matrices, en caso de tener modelos jerárquicos, tenemos control total.
             //A modo ejemplo realizamos toda las multiplicaciones, pero aquí solo nos hacia falta la traslación.
@@ -325,7 +289,7 @@ namespace TGC.Group.Model
             //Render de BoundingBox, muy útil para debug de colisiones.
             if (BoundingBox)
             {
-                MeshPersonaje.BoundingBox.Render();
+                //MeshPersonaje.BoundingBox.Render(); //Creo que nos va a ser útil
             }
 
             //Finaliza el render y presenta en pantalla, al igual que el preRender se debe para casos puntuales es mejor utilizar a mano las operaciones de EndScene y PresentScene
@@ -342,6 +306,7 @@ namespace TGC.Group.Model
             //Dispose del mesh.
             MeshPersonaje.Dispose();
             Scene.DisposeAll();
+            //No se si falta algo más
         }
     }
 }
