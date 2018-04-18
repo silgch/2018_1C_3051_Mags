@@ -25,7 +25,7 @@ namespace TGC.Group {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Alumnos")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Gustavo Choque, Axel Fulop, Cristian Matias Giorda, Silvina Gomez Cheda")]
         public string Category {
             get {
                 return ((string)(this["Category"]));
@@ -37,7 +37,7 @@ namespace TGC.Group {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Grupo 99")]
+        [global::System.Configuration.DefaultSettingValueAttribute("MAGS")]
         public string Name {
             get {
                 return ((string)(this["Name"]));
@@ -49,7 +49,8 @@ namespace TGC.Group {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Mi idea - Descripción de la idea")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Plataforma - Idea es que sea dentro de un castillo con estilo vampírico (Continua" +
+            "rá...)")]
         public string Description {
             get {
                 return ((string)(this["Description"]));

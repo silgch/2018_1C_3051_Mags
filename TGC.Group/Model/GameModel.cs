@@ -150,7 +150,7 @@ namespace TGC.Group.Model
             Tgcito = new Personaje(MeshPersonaje);
 
             //Configuro donde esta la posicion de la camara y hacia donde mira.
-            AjusteDeCamara = new TGCVector3(0f, 50f, -30f); // Se posiciona sobre el personaje y un poco hacia atrás
+            AjusteDeCamara = new TGCVector3(0f, 50f, -40f); // Se posiciona sobre el personaje y un poco hacia atrás
 
             CamaraPersonaje = new TgcCamera();
             CamaraPersonaje.SetCamera(Tgcito.GetPosicion() + AjusteDeCamara, Tgcito.GetPosicion());
@@ -230,7 +230,7 @@ namespace TGC.Group.Model
             {
              //Rotar personaje y la camara, hay que multiplicarlo por el tiempo transcurrido para no atarse a la velocidad el hardware
              // var rotAngle = Geometry.DegreeToRadian(rotate * ElapsedTime); //Empecemos por rotaciones simples
-                MeshPersonaje.RotateY(rotate); //El problema es que rota todo el tiempo 
+                // MeshPersonaje.RotateY(rotate); //El problema es que rota todo el tiempo 
              }
            
             //Si hubo desplazamiento
