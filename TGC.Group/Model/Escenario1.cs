@@ -17,9 +17,15 @@ namespace TGC.Group.Model
         private List<TGCBox> pared1;
         private List<TGCBox> pared2;
         private List<TgcPlane> piso;
-        private TGCBox caja1,caja2;
+        private TGCBox caja1,caja2,caja3;
         private TgcMesh barril1,calabera,esqueleto;
-
+        TGCMatrix escalaBaseParaCajas;
+        TGCMatrix posicionamientoCaja3;
+        TGCMatrix movimientoTraslacionY;
+        float traslacionCaja3 = 0f;
+        float velocidadTraslacionCaja = 10f;
+        float tiempoDeSubida;
+        bool subir;
 
         public void Init(GameModel gameModel) {
             GModel = gameModel;
@@ -61,11 +67,18 @@ namespace TGC.Group.Model
             }
             var texturaCaja = TgcTexture.createTexture(D3DDevice.Instance.Device, GModel.MediaDir + "\\Texturas\\cajaMadera4.jpg");
             var sizeCaja = new TGCVector3(50,50,50);
+            //Caja1 posicion = 100, 50/2, 150
             caja1 = TGCBox.fromSize(new TGCVector3(100,sizeCaja.Y/2,150),sizeCaja,texturaCaja);
             caja1.AutoTransform = true;
 
             caja2 = TGCBox.fromSize(new TGCVector3(400, sizeCaja.Y / 2, 2500), sizeCaja, texturaCaja);
             caja2.AutoTransform = true;
+
+            //Caja3 sin autoTransform
+            var centro = new TGCVector3(0f,0f,0f);
+            var tamanio = new TGCVector3(5f, 5f, 5f);
+            caja3 = TGCBox.fromSize(centro, tamanio, texturaCaja);
+            caja3.AutoTransform = false;
             //---------------------
             var loader = new TgcSceneLoader();
             var sceneBarril = loader.loadSceneFromFile(GModel.MediaDir+ "\\MeshCreator\\Meshes\\Objetos\\BarrilPolvora\\BarrilPolvora-TgcScene.xml");
@@ -83,11 +96,38 @@ namespace TGC.Group.Model
             esqueleto.AutoTransform = true;
             esqueleto.Position = new TGCVector3(30, 0, 1500);
 
+            //Matrices para el manejo de cajas
+            escalaBaseParaCajas = TGCMatrix.Scaling(10f, 10f, 10f);
+            posicionamientoCaja3 = TGCMatrix.Translation(20, caja3.Size.Y / 2, 20);
 
-
-
+            tiempoDeSubida = 5f; //Equivalente a 5 segundos?
+            subir = true; //La caja empieza subiendo
         }
-        public void Update() { }
+
+        public void Update() {
+            //Intento de hacer que la caja3 se traslade entre dos limites de tiempo
+            if(subir)
+            {
+                traslacionCaja3 += velocidadTraslacionCaja * GModel.ElapsedTime;
+                tiempoDeSubida -= GModel.ElapsedTime;
+                if(tiempoDeSubida <= 0)
+                {
+                    subir = false;
+                }
+            }
+            else
+            {
+                traslacionCaja3 -= velocidadTraslacionCaja * GModel.ElapsedTime;
+                tiempoDeSubida += GModel.ElapsedTime;
+                if (tiempoDeSubida >= 5)
+                {
+                    subir = true;
+                }
+            }
+
+            //En base a la traslacion que quiero se actualiza la matriz de traslación
+            movimientoTraslacionY = TGCMatrix.Translation(0, traslacionCaja3, 0);
+        }
         public void Render() {
 
 
@@ -107,6 +147,9 @@ namespace TGC.Group.Model
 
             caja1.Render();
             caja2.Render();
+            //Posiciono la caja 3, la escalo para el tamaño que quiero y le aplico la matriz de desplazamiento en Y
+            caja3.Transform = posicionamientoCaja3 * escalaBaseParaCajas * movimientoTraslacionY;
+            caja3.Render();
             barril1.Render();
             calabera.Render();
             esqueleto.Render();
@@ -131,6 +174,7 @@ namespace TGC.Group.Model
 
             caja1.Dispose();
             caja2.Dispose();
+            caja3.Dispose();
             barril1.Dispose();
             calabera.Dispose();
             esqueleto.Dispose();

@@ -50,7 +50,7 @@ namespace TGC.Group.Model
             tgcPersonaje.Init(this);
             escenario1.Init(this);
             
-            camaraInterna = new CamaraEnTerceraPersona(tgcPersonaje.Posicion(),35,-100);
+            camaraInterna = new CamaraEnTerceraPersona(tgcPersonaje.getPosicion(),35,-100);
             Camara = camaraInterna;
         }
 
@@ -63,6 +63,7 @@ namespace TGC.Group.Model
         {
             PreUpdate();
 
+            escenario1.Update();
             
             tgcPersonaje.Update();
             
@@ -80,9 +81,10 @@ namespace TGC.Group.Model
             PreRender();
 
             //Dibuja un texto por pantalla
-            DrawText.drawText("Con la tecla F se dibuja el bounding box.", 0, 20, Color.OrangeRed);
-            DrawText.drawText("Con clic izquierdo subimos la camara [Actual]: " + TGCVector3.PrintVector3(Camara.Position), 0, 30, Color.OrangeRed);
-                                         
+            //DrawText.drawText("Con la tecla F se dibuja el bounding box.", 0, 20, Color.OrangeRed);
+            DrawText.drawText("Posicion de la camara [Actual]: " + TGCVector3.PrintVector3(Camara.Position), 0, 20, Color.OrangeRed);
+            DrawText.drawText("Posicion del personaje [Actual]: " + TGCVector3.PrintVector3(tgcPersonaje.getPosicion()), 0, 30, Color.OrangeRed);
+
 
             tgcPersonaje.Render();
             escenario1.Render();

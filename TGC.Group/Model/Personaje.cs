@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TGC.Core.Geometry;
 using TGC.Core.Mathematica;
 using TGC.Core.SceneLoader;
 using Microsoft.DirectX.DirectInput;
@@ -19,6 +20,18 @@ namespace TGC.Group.Model
         //private TgcMesh personaje;
         private TgcSkeletalMesh personaje;
         //private const float MOVEMENT_SPEED = 200f;
+        
+        TGCVector3 vistaUp = TGCVector3.Up; //Vector normal, creo que para saltos lo vamos a necesitar
+        TGCVector3 orientacion = new TGCVector3(1f, 0f, 0f); //Hacia donde mira el personaje, debe ser un vector normalizado?
+        TGCVector3 posicion = new TGCVector3(250, 5, 0); //Posición al iniciar el juego
+        TGCVector3 checkpoint; //Ultima posicion para reset
+
+        Boolean saltando;
+
+        public TGCVector3 getPosicion()
+        {
+            return this.posicion;
+        }
 
         public void Init(GameModel gameModel) {
             GModel = gameModel;
@@ -41,11 +54,17 @@ namespace TGC.Group.Model
             //Configurar animacion inicial
             personaje.playAnimation("Parado", true);
 
+            //Esto hay que desactivarlo
             personaje.AutoTransform = true;
+
             personaje.Position = new TGCVector3(250, 5, 0);
+            checkpoint = personaje.Position;
 
             personaje.Scale = new TGCVector3(0.25f, 0.25f, 0.25f);
+            //Rotar porque empieza dado vuelta
             personaje.RotateY(FastMath.PI);
+
+            saltando = false;
 
         }
         public void Update() {
@@ -106,10 +125,32 @@ namespace TGC.Group.Model
             {
                 personaje.playAnimation("Parado", true);
             }
+
+            if (Input.keyPressed(Key.Space))
+            {
+                saltando = true;
+            }
+
+            if (saltando)
+            {
+                //No hay animacion para saltar, no se cual conviene usar
+                personaje.playAnimation("Parado", true);
+            }
+
             var lastPos = personaje.Position;
 
             personaje.MoveOrientedY(moveForward * GModel.ElapsedTime);
-            GModel.camaraInterna.Target = GModel.tgcPersonaje.Posicion();
+            GModel.camaraInterna.Target = GModel.tgcPersonaje.getPosicion();
+
+            //Una forma de reiniciar, que se active con R o cuando el personaje muere
+            if (Input.keyDown(Key.R) /* || Personaje.estaMuerto() */)
+            {
+                lastPos = this.checkpoint;
+                personaje.Position = lastPos;
+            }
+
+            this.posicion = lastPos;
+            
 
             ////movimiento sin rotacoin
             //var input = GModel.Input;
@@ -154,8 +195,6 @@ namespace TGC.Group.Model
         public void Dispose() {
             personaje.Dispose();
         }
-        public TGCVector3 Posicion() {
-            return personaje.Position;
-        }
+        
     }
 }
