@@ -9,6 +9,8 @@ using TGC.Core.SceneLoader;
 using Microsoft.DirectX.DirectInput;
 using Microsoft.DirectX.Direct3D;
 using TGC.Core.SkeletalAnimation;
+using TGC.Core.BoundingVolumes;
+using TGC.Core.Collision;
 
 namespace TGC.Group.Model
 {
@@ -20,7 +22,9 @@ namespace TGC.Group.Model
         //private TgcMesh personaje;
         private TgcSkeletalMesh personaje;
         //private const float MOVEMENT_SPEED = 200f;
-        
+        private float gravedad = -65f;
+
+
         TGCVector3 vistaUp = TGCVector3.Up; //Vector normal, creo que para saltos lo vamos a necesitar
         TGCVector3 orientacion = new TGCVector3(1f, 0f, 0f); //Hacia donde mira el personaje, debe ser un vector normalizado?
         TGCVector3 posicion = new TGCVector3(250, 5, 0); //Posición al iniciar el juego
@@ -134,13 +138,96 @@ namespace TGC.Group.Model
             if (saltando)
             {
                 //No hay animacion para saltar, no se cual conviene usar
-                personaje.playAnimation("Parado", true);
+                //personaje.playAnimation("Parado", true);
             }
 
             var lastPos = personaje.Position;
 
+            //---------prueba gravedad----------
+            personaje.Position += new TGCVector3(0, FastMath.Clamp(gravedad * GModel.ElapsedTime, -10, 10), 0);
+            //--------Colicion con el piso
+            TgcBoundingAxisAlignBox colliderPlano = null;
+            foreach (var obstaculo in GModel.escenario1.getPiso()/*GModel.escenario1.getPared1()*/)
+            {
+                if (TgcCollisionUtils.testAABBAABB(personaje.BoundingBox, obstaculo.BoundingBox))
+                {
+
+                    colliderPlano = obstaculo.BoundingBox;
+                    break;
+                }
+            }
+            if (colliderPlano != null)
+            {
+                personaje.Position = lastPos;
+            }
+
+            //----------Salto
+            if (Input.keyDown(Key.Space) /*&& colliderY != null*/)
+            {
+                personaje.Position += new TGCVector3(0, 1, 0);
+            }
+            
             personaje.MoveOrientedY(moveForward * GModel.ElapsedTime);
-            GModel.camaraInterna.Target = GModel.tgcPersonaje.getPosicion();
+            //---------Colisiones objetos--------------------------
+            var collide = false;
+            //TGCBox collider = null;
+            TgcBoundingAxisAlignBox collider = null;
+            foreach (var obstaculo in GModel.escenario1.getAABBDelEscenario()/*GModel.escenario1.getPared1()*/)
+            {
+                if (TgcCollisionUtils.testAABBAABB(personaje.BoundingBox, obstaculo))
+                {
+                    collide = true;
+                    collider = obstaculo;
+                    break;
+                }
+            }
+
+            if (collide)
+            {
+                var movementRay = lastPos - personaje.Position;
+                //collider.BoundingBox.setRenderColor(Color.Red);
+                var rs = TGCVector3.Empty;
+                if (((personaje.BoundingBox.PMax.X > collider.PMax.X && movementRay.X > 0) ||
+                            (personaje.BoundingBox.PMin.X < collider.PMin.X && movementRay.X < 0)) &&
+                            ((personaje.BoundingBox.PMax.Z > collider.PMax.Z && movementRay.Z > 0) ||
+                            (personaje.BoundingBox.PMin.Z < collider.PMin.Z && movementRay.Z < 0))                            )
+                {
+
+                    if (personaje.Position.X > collider.PMin.X && personaje.Position.X < collider.PMax.X)
+                    {
+                        //El personaje esta contenido en el bounding X
+
+                        rs = new TGCVector3(movementRay.X, movementRay.Y, 0);
+                    }
+                    if (personaje.Position.Z > collider.PMin.Z && personaje.Position.Z < collider.PMax.Z)
+                    {
+                        //El personaje esta contenido en el bounding Z
+
+                        rs = new TGCVector3(0, movementRay.Y, movementRay.Z);
+                    }
+                    
+                }
+                else
+                {
+                    if ((personaje.BoundingBox.PMax.X > collider.PMax.X && movementRay.X > 0) ||
+                        (personaje.BoundingBox.PMin.X < collider.PMin.X && movementRay.X < 0))
+                    {
+
+                        rs = new TGCVector3(0, movementRay.Y, movementRay.Z);
+                    }
+                    if ((personaje.BoundingBox.PMax.Z > collider.PMax.Z && movementRay.Z > 0) ||
+                        (personaje.BoundingBox.PMin.Z < collider.PMin.Z && movementRay.Z < 0))
+                    {
+
+                        rs = new TGCVector3(movementRay.X, movementRay.Y, 0);
+                    }
+                }
+                personaje.Position = lastPos - rs;
+            }
+
+
+            //--------------------------------------------
+             GModel.camaraInterna.Target = GModel.tgcPersonaje.getPosicion();
 
             //Una forma de reiniciar, que se active con R o cuando el personaje muere
             if (Input.keyDown(Key.R) /* || Personaje.estaMuerto() */)

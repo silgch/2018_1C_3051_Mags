@@ -9,6 +9,8 @@ using TGC.Core.Geometry;
 using TGC.Core.Direct3D;
 using Microsoft.DirectX.DirectInput;
 using TGC.Core.SceneLoader;
+using TGC.Core.BoundingVolumes;
+
 namespace TGC.Group.Model
 {
     public class Escenario1
@@ -27,6 +29,9 @@ namespace TGC.Group.Model
         float tiempoDeSubida;
         bool subir;
 
+        private List<TgcBoundingAxisAlignBox> aabbDelEscenario;
+
+
         public void Init(GameModel gameModel) {
             GModel = gameModel;
             var pisoTextura = TgcTexture.createTexture(D3DDevice.Instance.Device, GModel.MediaDir + "Texturas\\largerblock3b3dim.jpg");
@@ -42,6 +47,8 @@ namespace TGC.Group.Model
             pared2 = new List<TGCBox>();
             piso = new List<TgcPlane>();
 
+            aabbDelEscenario = new List<TgcBoundingAxisAlignBox>();
+
             for (var i = 0; i < 8; i++)
             {
                 var plane = new TgcPlane(new TGCVector3(0, 0, planeSize.Z * i), planeSize, pisoOrientacion, pisoTextura);
@@ -55,6 +62,7 @@ namespace TGC.Group.Model
                 
                 box.AutoTransform = true;
                 pared1.Add(box);
+                aabbDelEscenario.Add(box.BoundingBox);
 
             }
             for (var i = 0; i < 8; i++)
@@ -63,38 +71,50 @@ namespace TGC.Group.Model
                 var box = TGCBox.fromSize(center, boxSize, texturaTipo1);
                 box.AutoTransform = true;
                 pared2.Add(box);
-
+                aabbDelEscenario.Add(box.BoundingBox);
             }
             var texturaCaja = TgcTexture.createTexture(D3DDevice.Instance.Device, GModel.MediaDir + "\\Texturas\\cajaMadera4.jpg");
             var sizeCaja = new TGCVector3(50,50,50);
             //Caja1 posicion = 100, 50/2, 150
             caja1 = TGCBox.fromSize(new TGCVector3(100,sizeCaja.Y/2,150),sizeCaja,texturaCaja);
             caja1.AutoTransform = true;
+            aabbDelEscenario.Add(caja1.BoundingBox);
+
 
             caja2 = TGCBox.fromSize(new TGCVector3(400, sizeCaja.Y / 2, 2500), sizeCaja, texturaCaja);
             caja2.AutoTransform = true;
+            aabbDelEscenario.Add(caja2.BoundingBox);
+
 
             //Caja3 sin autoTransform
             var centro = new TGCVector3(0f,0f,0f);
             var tamanio = new TGCVector3(5f, 5f, 5f);
             caja3 = TGCBox.fromSize(centro, tamanio, texturaCaja);
             caja3.AutoTransform = false;
+            aabbDelEscenario.Add(caja3.BoundingBox);
+
+
             //---------------------
             var loader = new TgcSceneLoader();
             var sceneBarril = loader.loadSceneFromFile(GModel.MediaDir+ "\\MeshCreator\\Meshes\\Objetos\\BarrilPolvora\\BarrilPolvora-TgcScene.xml");
             barril1 = sceneBarril.Meshes[0];
             barril1.AutoTransform = true;
             barril1.Position = new TGCVector3(100,0,300);
+            aabbDelEscenario.Add(barril1.BoundingBox);
+
 
             var sceneCalabera= loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Esqueletos\\Calabera\\Calabera-TgcScene.xml");
             var sceneEsqueleto = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Esqueletos\\EsqueletoHumano\\Esqueleto-TgcScene.xml");
             calabera = sceneCalabera.Meshes[0];
             calabera.AutoTransform = true;
             calabera.Position= new TGCVector3(400, 0, 1000);
+            aabbDelEscenario.Add(calabera.BoundingBox);
 
             esqueleto = sceneEsqueleto.Meshes[0];
             esqueleto.AutoTransform = true;
             esqueleto.Position = new TGCVector3(30, 0, 1500);
+            aabbDelEscenario.Add(esqueleto.BoundingBox);
+
 
             //Matrices para el manejo de cajas
             escalaBaseParaCajas = TGCMatrix.Scaling(10f, 10f, 10f);
@@ -179,7 +199,14 @@ namespace TGC.Group.Model
             calabera.Dispose();
             esqueleto.Dispose();
         }
-
+        public List<TgcBoundingAxisAlignBox> getAABBDelEscenario()
+        {
+            return aabbDelEscenario;
+        }
+        public List<TgcPlane> getPiso()
+        {
+            return piso;
+        }
 
     }
 }
