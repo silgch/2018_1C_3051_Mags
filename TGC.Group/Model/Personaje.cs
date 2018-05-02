@@ -205,7 +205,9 @@ namespace TGC.Group.Model
                 if (((personaje.BoundingBox.PMax.X > collider.PMax.X && movementRay.X > 0) ||
                             (personaje.BoundingBox.PMin.X < collider.PMin.X && movementRay.X < 0)) &&
                             ((personaje.BoundingBox.PMax.Z > collider.PMax.Z && movementRay.Z > 0) ||
-                            (personaje.BoundingBox.PMin.Z < collider.PMin.Z && movementRay.Z < 0))                            )
+                            (personaje.BoundingBox.PMin.Z < collider.PMin.Z && movementRay.Z < 0)) &&
+                            ((personaje.BoundingBox.PMax.Y > collider.PMax.Y && movementRay.Y > 0) ||
+                            (personaje.BoundingBox.PMin.Y < collider.PMin.Y && movementRay.Y < 0)))
                 {
 
                     if (personaje.Position.X > collider.PMin.X && personaje.Position.X < collider.PMax.X)
@@ -220,7 +222,13 @@ namespace TGC.Group.Model
 
                         rs = new TGCVector3(0, movementRay.Y, movementRay.Z);
                     }
-                    
+                    if (personaje.Position.Y > collider.PMin.Y && personaje.Position.Y < collider.PMax.Y)
+                    {
+                        //El personaje esta contenido en el bounding Y
+
+                        rs = new TGCVector3(movementRay.X, 0, movementRay.Z);
+                    }
+
                 }
                 else
                 {
@@ -236,6 +244,12 @@ namespace TGC.Group.Model
                     {
 
                         rs = new TGCVector3(movementRay.X, movementRay.Y, 0);
+                    }
+                    if ((personaje.BoundingBox.PMax.Y > collider.PMax.Y && movementRay.Y > 0) ||
+                        (personaje.BoundingBox.PMin.Y < collider.PMin.Y && movementRay.Y < 0))
+                    {
+
+                        rs = new TGCVector3(movementRay.X, 0, movementRay.Z);
                     }
                 }
                 //El vector rs actua como "freno" al movimiento del personaje
