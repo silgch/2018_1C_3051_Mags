@@ -11,6 +11,8 @@ using Microsoft.DirectX.Direct3D;
 using TGC.Core.SkeletalAnimation;
 using TGC.Core.BoundingVolumes;
 using TGC.Core.Collision;
+using System.Drawing;
+using TGC.Core.Example;
 
 namespace TGC.Group.Model
 {
@@ -29,12 +31,23 @@ namespace TGC.Group.Model
         TGCVector3 orientacion = new TGCVector3(1f, 0f, 0f); //Hacia donde mira el personaje, debe ser un vector normalizado?
         TGCVector3 posicion = new TGCVector3(250, 5, 0); //Posición al iniciar el juego
         TGCVector3 checkpoint; //Ultima posicion para reset
+        TGCVector3 vectorColision = TGCVector3.Empty;
 
         Boolean saltando;
 
         public TGCVector3 getPosicion()
         {
             return this.posicion;
+        }
+
+        public TGCVector3 getOrientacion()
+        {
+            return orientacion;
+        }
+
+        public TGCVector3 getVectorColision()
+        {
+            return vectorColision;
         }
 
         public void Init(GameModel gameModel) {
@@ -184,8 +197,10 @@ namespace TGC.Group.Model
 
             if (collide)
             {
+                //Habria que lograr que si colisiona sobre el plano XZ se pueda caminar, como está ahora no puede caminar sobre la tapa de la caja por ejemplo
                 var movementRay = lastPos - personaje.Position;
-                //collider.BoundingBox.setRenderColor(Color.Red);
+                //Cuando choca con algo que se ponga rojo, nos sirve para probar
+                collider.setRenderColor(Color.Red);
                 var rs = TGCVector3.Empty;
                 if (((personaje.BoundingBox.PMax.X > collider.PMax.X && movementRay.X > 0) ||
                             (personaje.BoundingBox.PMin.X < collider.PMin.X && movementRay.X < 0)) &&
@@ -212,6 +227,7 @@ namespace TGC.Group.Model
                     if ((personaje.BoundingBox.PMax.X > collider.PMax.X && movementRay.X > 0) ||
                         (personaje.BoundingBox.PMin.X < collider.PMin.X && movementRay.X < 0))
                     {
+                        //Cual seria esta situacion? 
 
                         rs = new TGCVector3(0, movementRay.Y, movementRay.Z);
                     }
@@ -222,7 +238,9 @@ namespace TGC.Group.Model
                         rs = new TGCVector3(movementRay.X, movementRay.Y, 0);
                     }
                 }
+                //El vector rs actua como "freno" al movimiento del personaje
                 personaje.Position = lastPos - rs;
+                vectorColision = rs;
             }
 
 
@@ -237,7 +255,10 @@ namespace TGC.Group.Model
             }
 
             this.posicion = lastPos;
-            
+
+            //Diferencia entre la posición actual y la anterior me da el vector director del movimiento del personaje
+            //Hay que estar atento a la direccion que se toma y a la regla de la mano izquierda
+            orientacion = lastPos - personaje.Position;
 
             ////movimiento sin rotacoin
             //var input = GModel.Input;
@@ -282,6 +303,12 @@ namespace TGC.Group.Model
         public void Dispose() {
             personaje.Dispose();
         }
-        
+
+        public void DrawBoundingBox()
+        {
+            personaje.BoundingBox.Render();
+        }
+
     }
+    
 }

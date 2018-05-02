@@ -1,3 +1,4 @@
+using System;
 using Microsoft.DirectX.DirectInput;
 using System.Drawing;
 using TGC.Core.Direct3D;
@@ -29,6 +30,7 @@ namespace TGC.Group.Model
         public Personaje tgcPersonaje=new Personaje();
         public CamaraEnTerceraPersona camaraInterna;
         public Escenario1 escenario1 = new Escenario1();
+        public bool boundingBox;
 
         public GameModel(string mediaDir, string shadersDir) : base(mediaDir, shadersDir)
         {
@@ -66,6 +68,11 @@ namespace TGC.Group.Model
             escenario1.Update();
             
             tgcPersonaje.Update();
+
+            if (Input.keyPressed(Key.F))
+            {
+                boundingBox = !boundingBox;
+            }
             
             PostUpdate();
         }
@@ -84,11 +91,23 @@ namespace TGC.Group.Model
             //DrawText.drawText("Con la tecla F se dibuja el bounding box.", 0, 20, Color.OrangeRed);
             DrawText.drawText("Posicion de la camara [Actual]: " + TGCVector3.PrintVector3(Camara.Position), 0, 20, Color.OrangeRed);
             DrawText.drawText("Posicion del personaje [Actual]: " + TGCVector3.PrintVector3(tgcPersonaje.getPosicion()), 0, 30, Color.OrangeRed);
-
+            DrawText.drawText("Presionar F para ver las boundingBox", 0, 40, Color.OrangeRed);
+            DrawText.drawText("Vector direccion personaje" + TGCVector3.PrintVector3(tgcPersonaje.getOrientacion()), 0, 50, Color.OrangeRed);
+            DrawText.drawText("Vector direccion colision" + TGCVector3.PrintVector3(tgcPersonaje.getVectorColision()), 0, 60, Color.OrangeRed);
 
             tgcPersonaje.Render();
             escenario1.Render();
             //Finaliza el render y presenta en pantalla, al igual que el preRender se debe para casos puntuales es mejor utilizar a mano las operaciones de EndScene y PresentScene
+
+            //Mostrar los boundingBox correspondientes, no es algo que el personaje deba poder hacer pero es para ver que 
+            if (boundingBox)
+            {
+                tgcPersonaje.DrawBoundingBox();
+                //Cuando tengamos varios escenarios tendríamos que hacer
+                //escenarioActual.DrawBoundingBox();
+                //Con escenarioActual variable del gameModel
+                escenario1.DrawBoundingBox();
+            }
             PostRender();
         }
 

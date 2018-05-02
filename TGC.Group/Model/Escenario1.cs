@@ -31,7 +31,6 @@ namespace TGC.Group.Model
 
         private List<TgcBoundingAxisAlignBox> aabbDelEscenario;
 
-
         public void Init(GameModel gameModel) {
             GModel = gameModel;
             var pisoTextura = TgcTexture.createTexture(D3DDevice.Instance.Device, GModel.MediaDir + "Texturas\\largerblock3b3dim.jpg");
@@ -91,8 +90,8 @@ namespace TGC.Group.Model
             var tamanio = new TGCVector3(5f, 5f, 5f);
             caja3 = TGCBox.fromSize(centro, tamanio, texturaCaja);
             caja3.AutoTransform = false;
+            //El bounding box deberia calcularse con la caja ya transformada
             aabbDelEscenario.Add(caja3.BoundingBox);
-
 
             //---------------------
             var loader = new TgcSceneLoader();
@@ -101,8 +100,7 @@ namespace TGC.Group.Model
             barril1.AutoTransform = true;
             barril1.Position = new TGCVector3(100,0,300);
             aabbDelEscenario.Add(barril1.BoundingBox);
-
-
+            
             var sceneCalabera= loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Esqueletos\\Calabera\\Calabera-TgcScene.xml");
             var sceneEsqueleto = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Esqueletos\\EsqueletoHumano\\Esqueleto-TgcScene.xml");
             calabera = sceneCalabera.Meshes[0];
@@ -169,6 +167,9 @@ namespace TGC.Group.Model
             caja2.Render();
             //Posiciono la caja 3, la escalo para el tamaño que quiero y le aplico la matriz de desplazamiento en Y
             caja3.Transform = posicionamientoCaja3 * escalaBaseParaCajas * movimientoTraslacionY;
+            //Las transformaciones deben aplicarse tambien a las boundingBox
+            caja3.BoundingBox.transform(posicionamientoCaja3 * escalaBaseParaCajas * movimientoTraslacionY);
+
             caja3.Render();
             barril1.Render();
             calabera.Render();
@@ -208,5 +209,13 @@ namespace TGC.Group.Model
             return piso;
         }
 
+        public void DrawBoundingBox()
+        {
+            foreach(var boundingBox in aabbDelEscenario)
+            {
+                boundingBox.Render();
+            }
+                
+        }
     }
 }
