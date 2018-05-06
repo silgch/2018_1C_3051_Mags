@@ -10,6 +10,7 @@ using TGC.Core.Direct3D;
 using Microsoft.DirectX.DirectInput;
 using TGC.Core.SceneLoader;
 using TGC.Core.BoundingVolumes;
+using TGC.Core.Sound;
 
 namespace TGC.Group.Model
 {
@@ -19,8 +20,8 @@ namespace TGC.Group.Model
         private List<TGCBox> pared1;
         private List<TGCBox> pared2;
         private List<TgcPlane> piso;
-        private TGCBox caja1,caja2,caja3;
-        private TgcMesh barril1,calabera,esqueleto;
+        private TGCBox caja1,caja2,caja3, caja4;
+        private TgcMesh barril1, calabera, esqueleto, pilar, mueble1, pilarCaido1, pilarCaido2;
         TGCMatrix escalaBaseParaCajas;
         TGCMatrix posicionamientoCaja3;
         TGCMatrix movimientoTraslacionY;
@@ -29,7 +30,15 @@ namespace TGC.Group.Model
         float tiempoDeSubida;
         bool subir;
 
+        private List<TgcMesh> pilares;
+        private List<TgcMesh> muebles;
+        private TGCBox plaFija1, plaFija2, plaFija3, plaFija4, plaFija5;
+        private TGCBox plaMovil1;
+
         private List<TgcBoundingAxisAlignBox> aabbDelEscenario;
+        TGCMatrix posPlaMovil1;
+
+        private TgcMp3Player musicaFondo;
 
         public void Init(GameModel gameModel) {
             GModel = gameModel;
@@ -41,6 +50,7 @@ namespace TGC.Group.Model
 
 
             var boxSize = new TGCVector3(20, 150, 500);
+            var boxSize2 = new TGCVector3(500, 150, 20);
 
             pared1 = new List<TGCBox>();
             pared2 = new List<TGCBox>();
@@ -48,39 +58,132 @@ namespace TGC.Group.Model
 
             aabbDelEscenario = new List<TgcBoundingAxisAlignBox>();
 
+            pilares = new List<TgcMesh>();
+            muebles = new List<TgcMesh>();
+
+
+
+            //--------------piso
             for (var i = 0; i < 8; i++)
             {
                 var plane = new TgcPlane(new TGCVector3(0, 0, planeSize.Z * i), planeSize, pisoOrientacion, pisoTextura);
                 piso.Add(plane);
 
             }
-            for (var i = 0; i < 8; i++)
+            for (var i = 9; i < 12; i++)
             {
-                var center = new TGCVector3(planeSize.X, boxSize.Y / 2, (boxSize.Z / 2) + boxSize.Z * i);
-                var box = TGCBox.fromSize(center, boxSize, texturaTipo1);
-                
-                box.AutoTransform = true;
-                pared1.Add(box);
-                aabbDelEscenario.Add(box.BoundingBox);
+                var plane = new TgcPlane(new TGCVector3(0, 0, planeSize.Z * i), planeSize, pisoOrientacion, pisoTextura);
+                piso.Add(plane);
 
             }
+            for (var i = 13; i < 16; i++)
+            {
+                var plane = new TgcPlane(new TGCVector3(0, 0, planeSize.Z * i), planeSize, pisoOrientacion, pisoTextura);
+                piso.Add(plane);
+
+            }
+            for (var i = 2; i < 4; i++)
+            {
+                var plane = new TgcPlane(new TGCVector3(planeSize.X * i, 0, /*planeSize.Z * i*/8000), planeSize, pisoOrientacion, pisoTextura);
+                piso.Add(plane);
+
+            }
+
+            //---------pared1
             for (var i = 0; i < 8; i++)
             {
                 var center = new TGCVector3(0, boxSize.Y / 2, (boxSize.Z / 2) + boxSize.Z * i);
                 var box = TGCBox.fromSize(center, boxSize, texturaTipo1);
                 box.AutoTransform = true;
-                pared2.Add(box);
+                pared1.Add(box);
+
                 aabbDelEscenario.Add(box.BoundingBox);
             }
+
+            for (var i = 9; i < 12; i++)
+            {
+                var center = new TGCVector3(0, boxSize.Y / 2, (boxSize.Z / 2) + boxSize.Z * i);
+                var box = TGCBox.fromSize(center, boxSize, texturaTipo1);
+                box.AutoTransform = true;
+                pared1.Add(box);
+
+                aabbDelEscenario.Add(box.BoundingBox);
+            }
+            for (var i = 12; i < 17; i++)
+            {
+                var center = new TGCVector3(0, boxSize.Y / 2, (boxSize.Z / 2) + boxSize.Z * i);
+                var box = TGCBox.fromSize(center, boxSize, texturaTipo1);
+                box.AutoTransform = true;
+                pared1.Add(box);
+
+                aabbDelEscenario.Add(box.BoundingBox);
+            }
+
+            for (var i = 0; i < 4; i++)
+            {
+                var center = new TGCVector3((planeSize.X / 2) + boxSize2.X * i, boxSize2.Y / 2, 8500/*(boxSize.Z / 2) + boxSize.Z * i*/);
+                var box = TGCBox.fromSize(center, boxSize2, texturaTipo1);
+                box.AutoTransform = true;
+                pared1.Add(box);
+
+                aabbDelEscenario.Add(box.BoundingBox);
+            }
+
+
+
+            //------pared2
+            for (var i = 0; i < 8; i++)
+            {
+                var center = new TGCVector3(planeSize.X, boxSize.Y / 2, (boxSize.Z / 2) + boxSize.Z * i);
+                var box = TGCBox.fromSize(center, boxSize, texturaTipo1);
+
+                box.AutoTransform = true;
+                pared2.Add(box);
+
+                aabbDelEscenario.Add(box.BoundingBox);
+            }
+
+            for (var i = 8; i < 12; i++)
+            {
+                var center = new TGCVector3(planeSize.X, boxSize.Y / 2, (boxSize.Z / 2) + boxSize.Z * i);
+                var box = TGCBox.fromSize(center, boxSize, texturaTipo1);
+
+                box.AutoTransform = true;
+                pared2.Add(box);
+
+                aabbDelEscenario.Add(box.BoundingBox);
+            }
+            for (var i = 12; i < 16; i++)
+            {
+                var center = new TGCVector3(planeSize.X, boxSize.Y / 2, (boxSize.Z / 2) + boxSize.Z * i);
+                var box = TGCBox.fromSize(center, boxSize, texturaTipo1);
+
+                box.AutoTransform = true;
+                pared2.Add(box);
+
+                aabbDelEscenario.Add(box.BoundingBox);
+            }
+
+            for (var i = 1; i < 4; i++)
+            {
+                var center = new TGCVector3((planeSize.X / 2) + boxSize2.X * i, boxSize2.Y / 2, 8000/*(boxSize.Z / 2) + boxSize.Z * i*/);
+                var box = TGCBox.fromSize(center, boxSize2, texturaTipo1);
+                box.AutoTransform = true;
+                pared1.Add(box);
+
+                aabbDelEscenario.Add(box.BoundingBox);
+            }
+
+            //------------objetos estaticos----------------------------
+            //----------
             var texturaCaja = TgcTexture.createTexture(D3DDevice.Instance.Device, GModel.MediaDir + "\\Texturas\\cajaMadera4.jpg");
             var sizeCaja = new TGCVector3(50,50,50);
-            //Caja1 posicion = 100, 50/2, 150
-            caja1 = TGCBox.fromSize(new TGCVector3(100,sizeCaja.Y/2,150),sizeCaja,texturaCaja);
+
+            caja1 = TGCBox.fromSize(new TGCVector3(35, sizeCaja.Y / 2, 150), sizeCaja, texturaCaja);
             caja1.AutoTransform = true;
             aabbDelEscenario.Add(caja1.BoundingBox);
 
-
-            caja2 = TGCBox.fromSize(new TGCVector3(400, sizeCaja.Y / 2, 2500), sizeCaja, texturaCaja);
+            caja2 = TGCBox.fromSize(new TGCVector3(465, sizeCaja.Y / 2, 2300), sizeCaja, texturaCaja);
             caja2.AutoTransform = true;
             aabbDelEscenario.Add(caja2.BoundingBox);
 
@@ -92,6 +195,9 @@ namespace TGC.Group.Model
             caja3.AutoTransform = false;
             //El bounding box deberia calcularse con la caja ya transformada
             aabbDelEscenario.Add(caja3.BoundingBox);
+
+            caja4 = TGCBox.fromSize(new TGCVector3(0, 0, 0), sizeCaja, texturaCaja);
+            aabbDelEscenario.Add(caja4.BoundingBox);
 
             //---------------------
             var loader = new TgcSceneLoader();
@@ -110,8 +216,100 @@ namespace TGC.Group.Model
 
             esqueleto = sceneEsqueleto.Meshes[0];
             esqueleto.AutoTransform = true;
-            esqueleto.Position = new TGCVector3(30, 0, 1500);
+            esqueleto.Position = new TGCVector3(25, 0, 1600);
             aabbDelEscenario.Add(esqueleto.BoundingBox);
+
+
+            for (var i = 1; i < 8; i++)
+            {
+                var scenePilar = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Cimientos\\PilarEgipcio\\PilarEgipcio-TgcScene.xml");
+
+                pilar = scenePilar.Meshes[0];
+                pilar.Position = new TGCVector3(35, 0, planeSize.Z * i);
+                pilar.Scale = new TGCVector3(2f, 2f, 2f);
+                pilar.AutoTransform = true;
+                pilares.Add(pilar);
+                aabbDelEscenario.Add(pilar.BoundingBox);
+            }
+            for (var i = 1; i < 8; i++)
+            {
+                var scenePilar = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Cimientos\\PilarEgipcio\\PilarEgipcio-TgcScene.xml");
+
+                pilar = scenePilar.Meshes[0];
+                pilar.Position = new TGCVector3(465, 0, planeSize.Z * i);
+                pilar.Scale = new TGCVector3(2f, 2f, 2f);
+                pilar.AutoTransform = true;
+                pilares.Add(pilar);
+                aabbDelEscenario.Add(pilar.BoundingBox);
+            }
+            for (var i = 1; i < 7; i++)
+            {
+                var sceneMesaLuz = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Muebles\\MesaDeLuz\\MesaDeLuz-TgcScene.xml");
+                mueble1 = sceneMesaLuz.Meshes[0];
+                if ((i % 2) == 0)
+                {
+                    mueble1.Position = new TGCVector3(465, 0, 575 * i);
+                    mueble1.RotateY(FastMath.PI_HALF);
+                }
+                else
+                {
+                    mueble1.Position = new TGCVector3(35, 0, 575 * i);
+                    mueble1.RotateY(-FastMath.PI_HALF);
+                }
+
+                mueble1.AutoTransform = true;
+                muebles.Add(mueble1);
+                aabbDelEscenario.Add(mueble1.BoundingBox);
+            }
+
+
+            var scenePilar2 = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Cimientos\\PilarEgipcio\\PilarEgipcio-TgcScene.xml");
+            pilarCaido1 = scenePilar2.Meshes[0];
+            pilarCaido1.AutoTransform = false;
+            aabbDelEscenario.Add(pilarCaido1.BoundingBox);
+            pilarCaido1.Transform = TGCMatrix.RotationYawPitchRoll(0f, 0f, 1.5f) * TGCMatrix.Translation(120f, 10f, 1330f) * TGCMatrix.Scaling(3f, 1.2f, 1.2f);
+            pilarCaido1.BoundingBox.transform(TGCMatrix.RotationYawPitchRoll(0f, 0f, 1.5f) * TGCMatrix.Translation(120f, 10f, 1330f) * TGCMatrix.Scaling(3f, 1.2f, 1.2f));//TGCMatrix.Scaling(6f, 0.5f, 1f)); //* TGCMatrix.RotationYawPitchRoll(0f, 0f, 1f));
+
+            var scenePilar3 = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Cimientos\\PilarEgipcio\\PilarEgipcio-TgcScene.xml");
+
+            pilarCaido2 = scenePilar3.Meshes[0];
+            pilarCaido2.AutoTransform = false;
+            aabbDelEscenario.Add(pilarCaido2.BoundingBox);
+            pilarCaido2.Transform = TGCMatrix.RotationYawPitchRoll(0f, 0f, 1.5f) * TGCMatrix.Translation(120f, 10f, 2330f) * TGCMatrix.Scaling(3f, 1.2f, 1.2f);
+            pilarCaido2.BoundingBox.transform(TGCMatrix.RotationYawPitchRoll(0f, 0f, 1.5f) * TGCMatrix.Translation(120f, 10f, 2330f) * TGCMatrix.Scaling(3f, 1.2f, 1.2f));//TGCMatrix.Scaling(6f, 0.5f, 1f)); //* TGCMatrix.RotationYawPitchRoll(0f, 0f, 1f));
+
+            //--------------------------------------------------
+            //---------plataformas
+            var texturaPlataforma = TgcTexture.createTexture(D3DDevice.Instance.Device, GModel.MediaDir + "Texturas\\BM_DiffuseMap_pared.jpg");
+            var plataformaSize = new TGCVector3(100f, 20f, 100f);
+            plaFija1 = TGCBox.fromSize(new TGCVector3(0, 0, 0), plataformaSize, texturaPlataforma);
+            aabbDelEscenario.Add(plaFija1.BoundingBox);
+
+            plaFija2 = TGCBox.fromSize(new TGCVector3(0, 0, 0), plataformaSize, texturaPlataforma);
+            aabbDelEscenario.Add(plaFija2.BoundingBox);
+
+            plaFija3 = TGCBox.fromSize(new TGCVector3(0, 0, 0), plataformaSize, texturaPlataforma);
+            aabbDelEscenario.Add(plaFija3.BoundingBox);
+
+            plaFija4 = TGCBox.fromSize(new TGCVector3(0, 0, 0), plataformaSize, texturaPlataforma);
+            aabbDelEscenario.Add(plaFija4.BoundingBox);
+
+            plaFija5 = TGCBox.fromSize(new TGCVector3(0, 0, 0), plataformaSize, texturaPlataforma);
+            aabbDelEscenario.Add(plaFija5.BoundingBox);
+
+
+
+
+
+            plaMovil1 = TGCBox.fromSize(new TGCVector3(0f, 0f, 0f), plataformaSize, texturaPlataforma);
+            plaMovil1.AutoTransform = false;
+            aabbDelEscenario.Add(plaMovil1.BoundingBox);
+            posPlaMovil1 = TGCMatrix.Translation(250, -10, 500 * 12 + plaMovil1.Size.Z / 2);
+            //posPlaMovil1 = TGCMatrix.Translation(300, 20, 100);
+            plaMovil1.Transform = posPlaMovil1;
+            aabbDelEscenario.Add(plaMovil1.BoundingBox);
+
+
 
 
             //Matrices para el manejo de cajas
@@ -120,6 +318,13 @@ namespace TGC.Group.Model
 
             tiempoDeSubida = 5f; //Equivalente a 5 segundos?
             subir = true; //La caja empieza subiendo
+
+            //----------musica
+            musicaFondo = new TgcMp3Player();
+            musicaFondo.FileName = GModel.MediaDir + "\\Sound\\LavTown.mp3";
+            musicaFondo.play(true);
+
+
         }
 
         public void Update() {
@@ -171,9 +376,59 @@ namespace TGC.Group.Model
             caja3.BoundingBox.transform(posicionamientoCaja3 * escalaBaseParaCajas * movimientoTraslacionY);
 
             caja3.Render();
+
+            caja4.Transform = TGCMatrix.Translation(35, caja4.Size.Y / 2, 100);
+            caja4.BoundingBox.transform(TGCMatrix.Translation(35, caja4.Size.Y / 2, 100));
+            caja4.Render();
+
             barril1.Render();
             calabera.Render();
             esqueleto.Render();
+
+
+            foreach (var pilar in pilares)
+            {
+                pilar.Render();
+
+            }
+
+            foreach (var mueble1 in muebles)
+            {
+                mueble1.Render();
+
+            }
+            pilarCaido1.Render();
+
+
+            pilarCaido2.Render();
+
+            //-------prueba pltaforma fija
+            plaFija1.Render();
+            plaFija1.Transform = TGCMatrix.Translation(250, -10, 500 * 8 + 500 / 2);
+            plaFija1.BoundingBox.transform(TGCMatrix.Translation(250, -10, 500 * 8 + 500 / 2));
+
+            plaFija2.Render();
+            plaFija2.Transform = TGCMatrix.Translation(150, -10, 500 * 16 + 500 / 2);
+            plaFija2.BoundingBox.transform(TGCMatrix.Translation(150, -10, 500 * 16 + 500 / 2));
+
+            plaFija3.Render();
+            plaFija3.Transform = TGCMatrix.Translation(400, -10, 500 * 16 + 300);
+            plaFija3.BoundingBox.transform(TGCMatrix.Translation(400, -10, 500 * 16 + 300));
+
+            plaFija4.Render();
+            plaFija4.Transform = TGCMatrix.Translation(650, -10, 500 * 16 + 500 / 2);
+            plaFija4.BoundingBox.transform(TGCMatrix.Translation(650, -10, 500 * 16 + 500 / 2));
+
+            plaFija5.Render();
+            plaFija5.Transform = TGCMatrix.Translation(900, -10, 500 * 16 + 500 / 2);
+            plaFija5.BoundingBox.transform(TGCMatrix.Translation(900, -10, 500 * 16 + 500 / 2));
+
+            plaMovil1.Transform = posPlaMovil1;
+            plaMovil1.BoundingBox.transform(posPlaMovil1);
+
+            plaMovil1.Render();
+
+
 
         }
         public void Dispose() {
@@ -196,9 +451,34 @@ namespace TGC.Group.Model
             caja1.Dispose();
             caja2.Dispose();
             caja3.Dispose();
+            caja4.Dispose();
             barril1.Dispose();
             calabera.Dispose();
             esqueleto.Dispose();
+            foreach (var pilar in pilares)
+            {
+                pilar.Dispose();
+
+            }
+
+            foreach (var mueble1 in muebles)
+            {
+                mueble1.Dispose();
+
+            }
+            pilarCaido1.Dispose();
+            pilarCaido2.Dispose();
+
+            plaFija1.Dispose();
+            plaFija2.Dispose();
+            plaFija3.Dispose();
+
+            plaFija4.Dispose();
+
+            plaFija5.Dispose();
+
+
+            plaMovil1.Dispose();
         }
         public List<TgcBoundingAxisAlignBox> getAABBDelEscenario()
         {

@@ -9,6 +9,7 @@ using TGC.Core.Mathematica;
 using TGC.Core.SceneLoader;
 using TGC.Core.Textures;
 using System.Collections.Generic;
+using TGC.Core.Terrain;
 
 namespace TGC.Group.Model
 {
@@ -31,6 +32,7 @@ namespace TGC.Group.Model
         public CamaraEnTerceraPersona camaraInterna;
         public Escenario1 escenario1 = new Escenario1();
         public bool boundingBox;
+        private TgcSkyBox skyBox;
 
         public GameModel(string mediaDir, string shadersDir) : base(mediaDir, shadersDir)
         {
@@ -48,7 +50,23 @@ namespace TGC.Group.Model
         /// </summary>
         public override void Init()
         {
-                     
+            //Crear SkyBox
+            skyBox = new TgcSkyBox();
+            skyBox.Center = TGCVector3.Empty;
+            skyBox.Size = new TGCVector3(20000, 5000, 20000);
+            //Configurar las texturas para cada una de las 6 caras
+            skyBox.setFaceTexture(TgcSkyBox.SkyFaces.Up, MediaDir + "\\SkyBox\\SkyBox1\\lun4_up.jpg");
+            skyBox.setFaceTexture(TgcSkyBox.SkyFaces.Down, MediaDir + "\\SkyBox\\SkyBox1\\lun4_dn.jpg");
+            skyBox.setFaceTexture(TgcSkyBox.SkyFaces.Left, MediaDir + "\\SkyBox\\SkyBox1\\lun4_lf.jpg");
+            skyBox.setFaceTexture(TgcSkyBox.SkyFaces.Right, MediaDir + "\\SkyBox\\SkyBox1\\lun4_rt.jpg");
+
+            //Hay veces es necesario invertir las texturas Front y Back si se pasa de un sistema RightHanded a uno LeftHanded
+            skyBox.setFaceTexture(TgcSkyBox.SkyFaces.Front, MediaDir + "\\SkyBox\\SkyBox1\\lun4_ft.jpg");
+            skyBox.setFaceTexture(TgcSkyBox.SkyFaces.Back, MediaDir + "\\SkyBox\\SkyBox1\\lun4_bk.jpg");
+            skyBox.SkyEpsilon = 25f;
+            //Inicializa todos los valores para crear el SkyBox
+            skyBox.Init();
+
             tgcPersonaje.Init(this);
             escenario1.Init(this);
             
@@ -95,6 +113,7 @@ namespace TGC.Group.Model
             DrawText.drawText("Vector direccion personaje" + TGCVector3.PrintVector3(tgcPersonaje.getOrientacion()), 0, 50, Color.OrangeRed);
             DrawText.drawText("Vector direccion colision" + TGCVector3.PrintVector3(tgcPersonaje.getVectorColision()), 0, 60, Color.OrangeRed);
 
+            skyBox.Render();
             tgcPersonaje.Render();
             escenario1.Render();
             //Finaliza el render y presenta en pantalla, al igual que el preRender se debe para casos puntuales es mejor utilizar a mano las operaciones de EndScene y PresentScene
@@ -118,6 +137,7 @@ namespace TGC.Group.Model
         /// </summary>
         public override void Dispose()
         {
+            skyBox.Dispose();
             escenario1.Dispose();
             tgcPersonaje.Dispose();
         }
