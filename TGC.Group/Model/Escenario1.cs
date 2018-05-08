@@ -20,15 +20,17 @@ namespace TGC.Group.Model
         private List<TGCBox> pared1;
         private List<TGCBox> pared2;
         private List<TgcPlane> piso;
-        private TGCBox caja1,caja2,caja3, caja4;
+        private TGCBox caja1, caja2, caja3, caja4, caja5;
         private TgcMesh barril1, calabera, esqueleto, pilar, mueble1, pilarCaido1, pilarCaido2;
         TGCMatrix escalaBaseParaCajas;
-        TGCMatrix posicionamientoCaja3;
-        TGCMatrix movimientoTraslacionY;
+        TGCMatrix posicionamientoCaja3, posicionamientoCaja4, pivoteCaja5, radioCaja5;
+        TGCMatrix movimientoTraslacionY, movimientoTraslacionX, movimientoRotacionY;
         float traslacionCaja3 = 0f;
+        float traslacionCaja4 = 0f;
         float velocidadTraslacionCaja = 10f;
-        float tiempoDeSubida;
-        bool subir;
+        float velocidadRotacionCaja = 1f;
+        float tiempoDeSubida, tiempoDeMovLateral, rotacionTotal;
+        bool subir, movLateral;
 
         private List<TgcMesh> pilares;
         private List<TgcMesh> muebles;
@@ -36,7 +38,7 @@ namespace TGC.Group.Model
         private TGCBox plaMovil1;
 
         private List<TgcBoundingAxisAlignBox> aabbDelEscenario;
-        TGCMatrix posPlaMovil1;
+        TGCMatrix posicionamientoPla1, posicionamientoPla2, posicionamientoPla3, posicionamientoPla4, posicionamientoPla5, posPlaMovil1;
 
         private TgcMp3Player musicaFondo;
 
@@ -187,17 +189,23 @@ namespace TGC.Group.Model
             caja2.AutoTransform = true;
             aabbDelEscenario.Add(caja2.BoundingBox);
 
-
-            //Caja3 sin autoTransform
-            var centro = new TGCVector3(0f,0f,0f);
+            //------------cajas con matrices de movimiento----------------------------
+            var centro = new TGCVector3(0f, 0f, 0f);
             var tamanio = new TGCVector3(5f, 5f, 5f);
+            //Caja con movimiento en Y
             caja3 = TGCBox.fromSize(centro, tamanio, texturaCaja);
             caja3.AutoTransform = false;
-            //El bounding box deberia calcularse con la caja ya transformada
             aabbDelEscenario.Add(caja3.BoundingBox);
 
-            caja4 = TGCBox.fromSize(new TGCVector3(0, 0, 0), sizeCaja, texturaCaja);
+            //Caja con movimiento en X
+            caja4 = TGCBox.fromSize(centro, tamanio, texturaCaja);
+            caja4.AutoTransform = false;
             aabbDelEscenario.Add(caja4.BoundingBox);
+
+            //Caja con movimiento circular sobre el eje Y
+            caja5 = TGCBox.fromSize(centro, tamanio, texturaCaja);
+            caja5.AutoTransform = false;
+            aabbDelEscenario.Add(caja5.BoundingBox);
 
             //---------------------
             var loader = new TgcSceneLoader();
@@ -297,27 +305,36 @@ namespace TGC.Group.Model
             plaFija5 = TGCBox.fromSize(new TGCVector3(0, 0, 0), plataformaSize, texturaPlataforma);
             aabbDelEscenario.Add(plaFija5.BoundingBox);
 
-
-
-
-
             plaMovil1 = TGCBox.fromSize(new TGCVector3(0f, 0f, 0f), plataformaSize, texturaPlataforma);
             plaMovil1.AutoTransform = false;
             aabbDelEscenario.Add(plaMovil1.BoundingBox);
-            posPlaMovil1 = TGCMatrix.Translation(250, -10, 500 * 12 + plaMovil1.Size.Z / 2);
-            //posPlaMovil1 = TGCMatrix.Translation(300, 20, 100);
-            plaMovil1.Transform = posPlaMovil1;
-            aabbDelEscenario.Add(plaMovil1.BoundingBox);
-
-
-
 
             //Matrices para el manejo de cajas
             escalaBaseParaCajas = TGCMatrix.Scaling(10f, 10f, 10f);
-            posicionamientoCaja3 = TGCMatrix.Translation(20, caja3.Size.Y / 2, 20);
+            var ajusteAlturaDelCentro = caja3.Size.Y / 2;
+            posicionamientoCaja3 = TGCMatrix.Translation(20, ajusteAlturaDelCentro, 20);
+            posicionamientoCaja4 = TGCMatrix.Translation(30, ajusteAlturaDelCentro, 30);
+            pivoteCaja5 = TGCMatrix.Translation(30, ajusteAlturaDelCentro, 60);
+            radioCaja5 = TGCMatrix.Translation(0, 0, 5);
+
+            //Matrices para el manejo de plataformas
+            posicionamientoPla1 = TGCMatrix.Translation(250, -10, 500 * 8 + 500 / 2);
+
+            posicionamientoPla2 = TGCMatrix.Translation(150, -10, 500 * 16 + 500 / 2);
+
+            posicionamientoPla3 = TGCMatrix.Translation(400, -10, 500 * 16 + 300);
+
+            posicionamientoPla4 = TGCMatrix.Translation(650, -10, 500 * 16 + 500 / 2);
+
+            posicionamientoPla5 = TGCMatrix.Translation(900, -10, 500 * 16 + 500 / 2);
+
+            posPlaMovil1 = TGCMatrix.Translation(250, -10, 500 * 12 + plaMovil1.Size.Z / 2);
 
             tiempoDeSubida = 5f; //Equivalente a 5 segundos?
+            tiempoDeMovLateral = 10f;
             subir = true; //La caja empieza subiendo
+            movLateral = true;
+            rotacionTotal = 0f;
 
             //----------musica
             musicaFondo = new TgcMp3Player();
@@ -328,12 +345,12 @@ namespace TGC.Group.Model
         }
 
         public void Update() {
-            //Intento de hacer que la caja3 se traslade entre dos limites de tiempo
-            if(subir)
+            //Movimiento en Y de caja 3
+            if (subir)
             {
                 traslacionCaja3 += velocidadTraslacionCaja * GModel.ElapsedTime;
                 tiempoDeSubida -= GModel.ElapsedTime;
-                if(tiempoDeSubida <= 0)
+                if (tiempoDeSubida <= 0)
                 {
                     subir = false;
                 }
@@ -348,8 +365,34 @@ namespace TGC.Group.Model
                 }
             }
 
-            //En base a la traslacion que quiero se actualiza la matriz de traslación
+            //Movimiento en X de caja4
+            if (movLateral)
+            {
+                traslacionCaja4 += velocidadTraslacionCaja * GModel.ElapsedTime;
+                tiempoDeMovLateral -= GModel.ElapsedTime;
+                if (tiempoDeMovLateral <= 0)
+                {
+                    movLateral = false;
+                }
+            }
+            else
+            {
+                traslacionCaja4 -= velocidadTraslacionCaja * GModel.ElapsedTime;
+                tiempoDeMovLateral += GModel.ElapsedTime;
+                if (tiempoDeMovLateral >= 10)
+                {
+                    movLateral = true;
+                }
+            }
+
+            //En base a la traslacion que quiero se actualiza la matriz de traslación         
             movimientoTraslacionY = TGCMatrix.Translation(0, traslacionCaja3, 0);
+            movimientoTraslacionX = TGCMatrix.Translation(traslacionCaja4, 0, 0);
+
+            //Movimiento caja 5
+            rotacionTotal += velocidadRotacionCaja * GModel.ElapsedTime;
+            movimientoRotacionY = TGCMatrix.RotationY(rotacionTotal);
+
         }
         public void Render() {
 
@@ -371,15 +414,26 @@ namespace TGC.Group.Model
             caja1.Render();
             caja2.Render();
             //Posiciono la caja 3, la escalo para el tamaño que quiero y le aplico la matriz de desplazamiento en Y
-            caja3.Transform = posicionamientoCaja3 * escalaBaseParaCajas * movimientoTraslacionY;
+            var transformacionesCaja3 = posicionamientoCaja3 * escalaBaseParaCajas * movimientoTraslacionY;
+            caja3.Transform = transformacionesCaja3;
             //Las transformaciones deben aplicarse tambien a las boundingBox
-            caja3.BoundingBox.transform(posicionamientoCaja3 * escalaBaseParaCajas * movimientoTraslacionY);
+            caja3.BoundingBox.transform(transformacionesCaja3);
 
             caja3.Render();
 
-            caja4.Transform = TGCMatrix.Translation(35, caja4.Size.Y / 2, 100);
-            caja4.BoundingBox.transform(TGCMatrix.Translation(35, caja4.Size.Y / 2, 100));
+            var transformacionesCaja4 = posicionamientoCaja4 * escalaBaseParaCajas * movimientoTraslacionX;
+            caja4.Transform = transformacionesCaja4;
+            //Las transformaciones deben aplicarse tambien a las boundingBox
+            caja4.BoundingBox.transform(transformacionesCaja4);
+
             caja4.Render();
+
+            var transformacionesCaja5 = radioCaja5 * movimientoRotacionY * pivoteCaja5 * escalaBaseParaCajas;
+            caja5.Transform = transformacionesCaja5;
+            //Las transformaciones deben aplicarse tambien a las boundingBox
+            caja5.BoundingBox.transform(transformacionesCaja5);
+
+            caja5.Render();
 
             barril1.Render();
             calabera.Render();
@@ -403,28 +457,29 @@ namespace TGC.Group.Model
             pilarCaido2.Render();
 
             //-------prueba pltaforma fija
+            plaFija1.Transform = posicionamientoPla1;
+            plaFija1.BoundingBox.transform(posicionamientoPla1);
             plaFija1.Render();
-            plaFija1.Transform = TGCMatrix.Translation(250, -10, 500 * 8 + 500 / 2);
-            plaFija1.BoundingBox.transform(TGCMatrix.Translation(250, -10, 500 * 8 + 500 / 2));
 
+            plaFija2.Transform = posicionamientoPla2;
+            plaFija2.BoundingBox.transform(posicionamientoPla2);
             plaFija2.Render();
-            plaFija2.Transform = TGCMatrix.Translation(150, -10, 500 * 16 + 500 / 2);
-            plaFija2.BoundingBox.transform(TGCMatrix.Translation(150, -10, 500 * 16 + 500 / 2));
 
+            plaFija3.Transform = posicionamientoPla3;
+            plaFija3.BoundingBox.transform(posicionamientoPla3);
             plaFija3.Render();
-            plaFija3.Transform = TGCMatrix.Translation(400, -10, 500 * 16 + 300);
-            plaFija3.BoundingBox.transform(TGCMatrix.Translation(400, -10, 500 * 16 + 300));
 
+            plaFija4.Transform = posicionamientoPla4;
+            plaFija4.BoundingBox.transform(posicionamientoPla4);
             plaFija4.Render();
-            plaFija4.Transform = TGCMatrix.Translation(650, -10, 500 * 16 + 500 / 2);
-            plaFija4.BoundingBox.transform(TGCMatrix.Translation(650, -10, 500 * 16 + 500 / 2));
 
+            plaFija5.Transform = posicionamientoPla5;
+            plaFija5.BoundingBox.transform(posicionamientoPla5);
             plaFija5.Render();
-            plaFija5.Transform = TGCMatrix.Translation(900, -10, 500 * 16 + 500 / 2);
-            plaFija5.BoundingBox.transform(TGCMatrix.Translation(900, -10, 500 * 16 + 500 / 2));
 
-            plaMovil1.Transform = posPlaMovil1;
-            plaMovil1.BoundingBox.transform(posPlaMovil1);
+            var transformacionesPlataformaMovil = movimientoTraslacionY * posPlaMovil1;
+            plaMovil1.Transform = transformacionesPlataformaMovil;
+            plaMovil1.BoundingBox.transform(transformacionesPlataformaMovil);
 
             plaMovil1.Render();
 
