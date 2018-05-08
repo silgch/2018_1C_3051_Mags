@@ -112,7 +112,6 @@ namespace TGC.Group.Model
             DrawText.drawText("Presionar F para ver las boundingBox", 0, 40, Color.OrangeRed);
             DrawText.drawText("Vector direccion personaje" + TGCVector3.PrintVector3(tgcPersonaje.getOrientacion()), 0, 50, Color.OrangeRed);
             DrawText.drawText("Vector direccion colision" + TGCVector3.PrintVector3(tgcPersonaje.getVectorColision()), 0, 60, Color.OrangeRed);
-            DrawText.drawText("Desplazamiento: " + TGCVector3.PrintVector3(tgcPersonaje.getVectorDesplazamiento()), 0, 70, Color.OrangeRed);
 
             skyBox.Render();
             tgcPersonaje.Render();
