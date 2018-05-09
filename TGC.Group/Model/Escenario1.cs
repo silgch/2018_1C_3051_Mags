@@ -32,17 +32,24 @@ namespace TGC.Group.Model
         float tiempoDeSubida, tiempoDeMovLateral, rotacionTotal;
         bool subir, movLateral;
 
+        TGCVector3 desplazamientoCaja3;
+        TGCVector3 desplazamientoCaja4;
+        TGCVector3 desplazamientoCaja5;
+
         private List<TgcMesh> pilares;
         private List<TgcMesh> muebles;
         private TGCBox plaFija1, plaFija2, plaFija3, plaFija4, plaFija5;
         private TGCBox plaMovil1;
 
         private List<TgcBoundingAxisAlignBox> aabbDelEscenario;
+        private List<TgcBoundingAxisAlignBox> plataformasDelEscenario;
+        private List<TGCVector3> desplazamientosDePlataformasDelEscenario;
         TGCMatrix posicionamientoPla1, posicionamientoPla2, posicionamientoPla3, posicionamientoPla4, posicionamientoPla5, posPlaMovil1;
 
         private TgcMp3Player musicaFondo;
 
-        public void Init(GameModel gameModel) {
+        public void Init(GameModel gameModel)
+        {
             GModel = gameModel;
             var pisoTextura = TgcTexture.createTexture(D3DDevice.Instance.Device, GModel.MediaDir + "Texturas\\largerblock3b3dim.jpg");
             var planeSize = new TGCVector3(500, 0, 500);
@@ -59,11 +66,11 @@ namespace TGC.Group.Model
             piso = new List<TgcPlane>();
 
             aabbDelEscenario = new List<TgcBoundingAxisAlignBox>();
+            plataformasDelEscenario = new List<TgcBoundingAxisAlignBox>();
+            desplazamientosDePlataformasDelEscenario = new List<TGCVector3>();
 
             pilares = new List<TgcMesh>();
             muebles = new List<TgcMesh>();
-
-
 
             //--------------piso
             for (var i = 0; i < 8; i++)
@@ -131,8 +138,6 @@ namespace TGC.Group.Model
                 aabbDelEscenario.Add(box.BoundingBox);
             }
 
-
-
             //------pared2
             for (var i = 0; i < 8; i++)
             {
@@ -179,7 +184,7 @@ namespace TGC.Group.Model
             //------------objetos estaticos----------------------------
             //----------
             var texturaCaja = TgcTexture.createTexture(D3DDevice.Instance.Device, GModel.MediaDir + "\\Texturas\\cajaMadera4.jpg");
-            var sizeCaja = new TGCVector3(50,50,50);
+            var sizeCaja = new TGCVector3(50, 50, 50);
 
             caja1 = TGCBox.fromSize(new TGCVector3(35, sizeCaja.Y / 2, 150), sizeCaja, texturaCaja);
             caja1.AutoTransform = true;
@@ -189,37 +194,38 @@ namespace TGC.Group.Model
             caja2.AutoTransform = true;
             aabbDelEscenario.Add(caja2.BoundingBox);
 
-            //------------cajas con matrices de movimiento----------------------------
+
+            //------------objetos con matrices de movimiento----------------------------
             var centro = new TGCVector3(0f, 0f, 0f);
             var tamanio = new TGCVector3(5f, 5f, 5f);
             //Caja con movimiento en Y
             caja3 = TGCBox.fromSize(centro, tamanio, texturaCaja);
             caja3.AutoTransform = false;
-            aabbDelEscenario.Add(caja3.BoundingBox);
+            plataformasDelEscenario.Add(caja3.BoundingBox);
 
             //Caja con movimiento en X
             caja4 = TGCBox.fromSize(centro, tamanio, texturaCaja);
             caja4.AutoTransform = false;
-            aabbDelEscenario.Add(caja4.BoundingBox);
+            plataformasDelEscenario.Add(caja4.BoundingBox);
 
             //Caja con movimiento circular sobre el eje Y
             caja5 = TGCBox.fromSize(centro, tamanio, texturaCaja);
             caja5.AutoTransform = false;
-            aabbDelEscenario.Add(caja5.BoundingBox);
+            plataformasDelEscenario.Add(caja5.BoundingBox);
 
-            //---------------------
+            //---------------------Otros objetos
             var loader = new TgcSceneLoader();
-            var sceneBarril = loader.loadSceneFromFile(GModel.MediaDir+ "\\MeshCreator\\Meshes\\Objetos\\BarrilPolvora\\BarrilPolvora-TgcScene.xml");
+            var sceneBarril = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Objetos\\BarrilPolvora\\BarrilPolvora-TgcScene.xml");
             barril1 = sceneBarril.Meshes[0];
             barril1.AutoTransform = true;
-            barril1.Position = new TGCVector3(100,0,300);
+            barril1.Position = new TGCVector3(100, 0, 300);
             aabbDelEscenario.Add(barril1.BoundingBox);
-            
-            var sceneCalabera= loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Esqueletos\\Calabera\\Calabera-TgcScene.xml");
+
+            var sceneCalabera = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Esqueletos\\Calabera\\Calabera-TgcScene.xml");
             var sceneEsqueleto = loader.loadSceneFromFile(GModel.MediaDir + "\\MeshCreator\\Meshes\\Esqueletos\\EsqueletoHumano\\Esqueleto-TgcScene.xml");
             calabera = sceneCalabera.Meshes[0];
             calabera.AutoTransform = true;
-            calabera.Position= new TGCVector3(400, 0, 1000);
+            calabera.Position = new TGCVector3(400, 0, 1000);
             aabbDelEscenario.Add(calabera.BoundingBox);
 
             esqueleto = sceneEsqueleto.Meshes[0];
@@ -330,6 +336,17 @@ namespace TGC.Group.Model
 
             posPlaMovil1 = TGCMatrix.Translation(250, -10, 500 * 12 + plaMovil1.Size.Z / 2);
 
+            //Asumo el orden en el que fueron agregadas
+            desplazamientoCaja3 = new TGCVector3(0, 1, 0);
+            desplazamientoCaja4 = new TGCVector3(1, 0, 0);
+            desplazamientoCaja5 = new TGCVector3(0, 1, 0);
+
+            //En principio pensamos en tener una lista de matricesDePlataformasDelEscenario pero
+            //Al pasar las matrices no logramos lo esperado
+            desplazamientosDePlataformasDelEscenario.Add(desplazamientoCaja3); //caja3
+            desplazamientosDePlataformasDelEscenario.Add(desplazamientoCaja4); //caja4
+            desplazamientosDePlataformasDelEscenario.Add(desplazamientoCaja5); //caja5
+
             tiempoDeSubida = 5f; //Equivalente a 5 segundos?
             tiempoDeMovLateral = 10f;
             subir = true; //La caja empieza subiendo
@@ -341,11 +358,12 @@ namespace TGC.Group.Model
             musicaFondo.FileName = GModel.MediaDir + "\\Sound\\LavTown.mp3";
             musicaFondo.play(true);
 
-
         }
 
-        public void Update() {
-            //Movimiento en Y de caja 3
+        public void Update()
+        {
+
+            //Intento de hacer que la caja3 se traslade entre dos limites de tiempo
             if (subir)
             {
                 traslacionCaja3 += velocidadTraslacionCaja * GModel.ElapsedTime;
@@ -365,7 +383,7 @@ namespace TGC.Group.Model
                 }
             }
 
-            //Movimiento en X de caja4
+            //Movimiento caja4
             if (movLateral)
             {
                 traslacionCaja4 += velocidadTraslacionCaja * GModel.ElapsedTime;
@@ -385,16 +403,22 @@ namespace TGC.Group.Model
                 }
             }
 
+            desplazamientoCaja3 = new TGCVector3(0, traslacionCaja3, 0);
+            desplazamientoCaja4 = new TGCVector3(traslacionCaja4, 0, 0);
+            //El problema de plantearlo asi es que la caja que rota sobre un eje Y no seria facil de calcular...
+            desplazamientoCaja5 = new TGCVector3(0, 1, 0);
+
             //En base a la traslacion que quiero se actualiza la matriz de traslación         
-            movimientoTraslacionY = TGCMatrix.Translation(0, traslacionCaja3, 0);
-            movimientoTraslacionX = TGCMatrix.Translation(traslacionCaja4, 0, 0);
+            movimientoTraslacionY = TGCMatrix.Translation(desplazamientoCaja3);
+            movimientoTraslacionX = TGCMatrix.Translation(desplazamientoCaja4);
 
             //Movimiento caja 5
             rotacionTotal += velocidadRotacionCaja * GModel.ElapsedTime;
             movimientoRotacionY = TGCMatrix.RotationY(rotacionTotal);
 
         }
-        public void Render() {
+        public void Render()
+        {
 
 
             foreach (var plano in piso)
@@ -486,7 +510,8 @@ namespace TGC.Group.Model
 
 
         }
-        public void Dispose() {
+        public void Dispose()
+        {
 
             foreach (var plano in piso)
             {
@@ -507,6 +532,7 @@ namespace TGC.Group.Model
             caja2.Dispose();
             caja3.Dispose();
             caja4.Dispose();
+            caja5.Dispose();
             barril1.Dispose();
             calabera.Dispose();
             esqueleto.Dispose();
@@ -539,6 +565,16 @@ namespace TGC.Group.Model
         {
             return aabbDelEscenario;
         }
+        public List<TgcBoundingAxisAlignBox> getPlataformasDelEscenario()
+        {
+            return plataformasDelEscenario;
+        }
+        public TGCVector3 desplazamientoDePlataforma(TgcBoundingAxisAlignBox plataforma)
+        {
+            int indice;
+            indice = plataformasDelEscenario.IndexOf(plataforma);
+            return desplazamientosDePlataformasDelEscenario.ElementAt(indice);
+        }
         public List<TgcPlane> getPiso()
         {
             return piso;
@@ -546,11 +582,15 @@ namespace TGC.Group.Model
 
         public void DrawBoundingBox()
         {
-            foreach(var boundingBox in aabbDelEscenario)
+            foreach (var boundingBox in aabbDelEscenario)
             {
                 boundingBox.Render();
             }
-                
+            foreach (var boundingBox in plataformasDelEscenario)
+            {
+                boundingBox.Render();
+            }
+
         }
     }
 }
